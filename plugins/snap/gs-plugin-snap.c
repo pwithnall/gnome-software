@@ -63,6 +63,7 @@ gs_plugin_initialize (GsPlugin *plugin)
 	gs_plugin_add_rule (plugin, GS_PLUGIN_RULE_RUN_BEFORE, "icons");
 
 	/* Override hardcoded popular apps */
+	gs_plugin_add_rule (plugin, GS_PLUGIN_RULE_RUN_BEFORE, "hardcoded-featured");
 	gs_plugin_add_rule (plugin, GS_PLUGIN_RULE_RUN_BEFORE, "hardcoded-popular");
 
 	/* set name of MetaInfo file */
@@ -302,6 +303,45 @@ gs_plugin_destroy (GsPlugin *plugin)
 }
 
 gboolean
+gs_plugin_add_featured (GsPlugin *plugin,
+		        GsAppList *list,
+		        GCancellable *cancellable,
+		        GError **error)
+{
+	g_autoptr(GPtrArray) snaps = NULL;
+	SnapdSnap *snap;
+	g_autoptr(GsApp) app = NULL;
+	g_autofree gchar *css = NULL;
+
+	snaps = find_snaps (plugin, SNAPD_FIND_FLAGS_NONE, "featured", NULL, cancellable, error);
+	if (snaps == NULL)
+		return FALSE;
+
+	if (snaps->len == 0)
+		return TRUE;
+
+	/* use first snap as the featured app */
+	snap = snaps->pdata[0];
+	app = snap_to_app (plugin, snap);
+	css = g_strdup_printf ("border-color: #000000;\n"
+			       "text-shadow: 0 1px 1px rgba(0,0,0,0.5);\n"
+			       "color: #ffffff;\n"
+			       "outline-offset: 0;\n"
+			       "outline-color: alpha(#ffffff, 0.75);\n"
+			       "outline-style: dashed;\n"
+			       "outline-offset: 2px;\n"
+			       "background:"
+			       " #000000"
+			       " url('%s')"
+			       " left center / auto no-repeat;",
+			       snapd_snap_get_icon (snap));
+	gs_app_set_metadata (app, "GnomeSoftware::FeatureTile-css", css);
+	gs_app_list_add (list, app);
+
+	return TRUE;
+}
+
+gboolean
 gs_plugin_add_popular (GsPlugin *plugin,
 		       GsAppList *list,
 		       GCancellable *cancellable,
@@ -314,7 +354,8 @@ gs_plugin_add_popular (GsPlugin *plugin,
 	if (snaps == NULL)
 		return FALSE;
 
-	for (i = 0; i < snaps->len; i++) {
+	/* skip first snap - it is used as the featured app */
+	for (i = 1; i < snaps->len; i++) {
 		SnapdSnap *snap = snaps->pdata[i];
 		gs_app_list_add (list, snap_to_app (plugin, snap));
 	}

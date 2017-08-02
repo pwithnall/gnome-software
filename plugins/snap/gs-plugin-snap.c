@@ -314,6 +314,7 @@ gs_plugin_add_featured (GsPlugin *plugin,
 	GPtrArray *screenshots;
 	guint i;
 	const gchar *banner_url = NULL;
+	g_autofree gchar *background_css = NULL;
 	g_autofree gchar *css = NULL;
 
 	snaps = find_snaps (plugin, SNAPD_FIND_FLAGS_NONE, "featured", NULL, cancellable, error);
@@ -343,6 +344,10 @@ gs_plugin_add_featured (GsPlugin *plugin,
 		}
 	}
 
+	background_css = g_strdup_printf ("url('%s') left center / auto no-repeat,"
+					  " url('%s') center / cover no-repeat;",
+					  snapd_snap_get_icon (snap),
+					  banner_url);
 	css = g_strdup_printf ("border-color: #000000;\n"
 			       "text-shadow: 0 1px 1px rgba(0,0,0,0.5);\n"
 			       "color: #ffffff;\n"
@@ -350,12 +355,10 @@ gs_plugin_add_featured (GsPlugin *plugin,
 			       "outline-color: alpha(#ffffff, 0.75);\n"
 			       "outline-style: dashed;\n"
 			       "outline-offset: 2px;\n"
-			       "background:"
-			       " #000000"
-			       " url('%s')"
-			       " left center / auto no-repeat;",
-			       snapd_snap_get_icon (snap));
+			       "background: %s;",
+			       background_css);
 	gs_app_set_metadata (app, "GnomeSoftware::FeatureTile-css", css);
+
 	gs_app_list_add (list, app);
 
 	return TRUE;

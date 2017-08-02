@@ -311,6 +311,9 @@ gs_plugin_add_featured (GsPlugin *plugin,
 	g_autoptr(GPtrArray) snaps = NULL;
 	SnapdSnap *snap;
 	g_autoptr(GsApp) app = NULL;
+	GPtrArray *screenshots;
+	guint i;
+	const gchar *banner_url = NULL;
 	g_autofree gchar *css = NULL;
 
 	snaps = find_snaps (plugin, SNAPD_FIND_FLAGS_NONE, "featured", NULL, cancellable, error);
@@ -323,6 +326,23 @@ gs_plugin_add_featured (GsPlugin *plugin,
 	/* use first snap as the featured app */
 	snap = snaps->pdata[0];
 	app = snap_to_app (plugin, snap);
+
+	/* if has a sceenshot called 'banner.png' then use that as the banner */
+	screenshots = snapd_snap_get_screenshots (snap);
+	for (i = 0; i < screenshots->len; i++) {
+		SnapdScreenshot *screenshot = screenshots->pdata[i];
+		const gchar *url;
+		g_autofree gchar *filename = NULL;
+
+		url = snapd_screenshot_get_url (screenshot);
+		filename = g_path_get_basename (url);
+		if (g_strcmp0 (filename, "banner.png") == 0 ||
+		    g_strcmp0 (filename, "banner.jpg") == 0) {
+			banner_url = url;
+			break;
+		}
+	}
+
 	css = g_strdup_printf ("border-color: #000000;\n"
 			       "text-shadow: 0 1px 1px rgba(0,0,0,0.5);\n"
 			       "color: #ffffff;\n"
@@ -592,8 +612,17 @@ gs_plugin_refine_app (GsPlugin *plugin,
 
 			for (i = 0; i < screenshots->len; i++) {
 				SnapdScreenshot *screenshot = screenshots->pdata[i];
+				const gchar *url;
+				g_autofree gchar *filename = NULL;
 				g_autoptr(AsScreenshot) ss = NULL;
 				g_autoptr(AsImage) image = NULL;
+
+				/* skip sceenshots used for banner when app is featured */
+				url = snapd_screenshot_get_url (screenshot);
+				filename = g_path_get_basename (url);
+				if (g_strcmp0 (filename, "banner.png") == 0 ||
+				    g_strcmp0 (filename, "banner.jpg") == 0)
+					continue;
 
 				ss = as_screenshot_new ();
 				as_screenshot_set_kind (ss, AS_SCREENSHOT_KIND_NORMAL);

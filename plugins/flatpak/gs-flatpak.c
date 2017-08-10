@@ -1043,6 +1043,9 @@ gs_flatpak_app_install_source (GsFlatpak *self, GsApp *app,
 	if (branch != NULL)
 		flatpak_remote_set_default_branch (xremote, branch);
 
+	/* collection IDs */
+	flatpak_remote_set_collection_id (xremote, gs_flatpak_app_get_collection_id (app));
+
 	/* install it */
 	gs_app_set_state (app, AS_APP_STATE_INSTALLING);
 	if (!flatpak_installation_modify_remote (self->installation,

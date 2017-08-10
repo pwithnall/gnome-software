@@ -445,6 +445,8 @@ gs_flatpak_rescan_appstream_store (GsFlatpak *self,
 		FlatpakRemote *xremote = g_ptr_array_index (xremotes, i);
 		if (flatpak_remote_get_disabled (xremote))
 			continue;
+		if (flatpak_remote_get_remote_type (xremote) != FLATPAK_REMOTE_TYPE_STATIC)
+			continue;
 		g_debug ("found remote %s",
 			 flatpak_remote_get_name (xremote));
 		if (!gs_flatpak_add_apps_from_xremote (self, xremote, cancellable, error))
@@ -630,6 +632,9 @@ gs_flatpak_refresh_appstream (GsFlatpak *self, guint cache_age,
 
 		/* not enabled */
 		if (flatpak_remote_get_disabled (xremote))
+			continue;
+
+		if (flatpak_remote_get_remote_type (xremote) != FLATPAK_REMOTE_TYPE_STATIC)
 			continue;
 
 		/* skip known-broken repos */
@@ -845,6 +850,9 @@ gs_flatpak_add_sources (GsFlatpak *self, GsAppList *list,
 		if (flatpak_remote_get_noenumerate (xremote))
 			continue;
 
+		if (flatpak_remote_get_remote_type (xremote) != FLATPAK_REMOTE_TYPE_STATIC)
+			continue;
+
 		/* create app */
 		app = gs_flatpak_create_source (self, xremote);
 		gs_app_list_add (list, app);
@@ -953,6 +961,8 @@ gs_flatpak_find_app (GsFlatpak *self,
 
 		/* disabled */
 		if (flatpak_remote_get_disabled (xremote))
+			continue;
+		if (flatpak_remote_get_remote_type (xremote) != FLATPAK_REMOTE_TYPE_STATIC)
 			continue;
 		refs_remote = flatpak_installation_list_remote_refs_sync (self->installation,
 									  flatpak_remote_get_name (xremote),
@@ -1361,6 +1371,9 @@ gs_flatpak_refine_origin_from_installation (GsFlatpak *self,
 
 		/* not enabled */
 		if (flatpak_remote_get_disabled (xremote))
+			continue;
+
+		if (flatpak_remote_get_remote_type (xremote) != FLATPAK_REMOTE_TYPE_STATIC)
 			continue;
 
 		/* sync */
